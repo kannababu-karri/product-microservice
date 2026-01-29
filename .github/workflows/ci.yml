@@ -28,8 +28,8 @@ jobs:
         distribution: 'temurin'
     - name: Install Maven
       run: |
-        sudo apt-get update
-        sudo apt-get install -y maven
+        apt-get update
+        apt-get install -y maven
 
     - name: Build Spring Boot Product Microservices
       run: mvn clean install
