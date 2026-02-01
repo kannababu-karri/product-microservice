@@ -28,7 +28,7 @@ public class ProductController {
 
 	private static final Logger _LOGGER = LoggerFactory.getLogger(ProductController.class);
 	
-    @Autowired
+	@Autowired
     private ProductService productService;
     
     public ProductController() {

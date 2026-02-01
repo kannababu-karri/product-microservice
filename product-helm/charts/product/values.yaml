@@ -1,3 +1,3 @@
 image:
-  repository: ghcr.io/username/repo/demo
+  repository: ghcr.io/kannababu-karri/product-microservice/demo
   tag: "1.0.3"

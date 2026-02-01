@@ -19,8 +19,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 	
 	void deleteByProductId(Long id);
 	
-
-    
     @Query("""
     	    SELECT p FROM Product p
     	    WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :productName, '%'))
