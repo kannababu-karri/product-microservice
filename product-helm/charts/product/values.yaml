@@ -1,0 +1,3 @@
+image:
+  repository: ghcr.io/username/repo/demo
+  tag: "1.0.3"
