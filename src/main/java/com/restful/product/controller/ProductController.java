@@ -1,10 +1,14 @@
 package com.restful.product.controller;
 
-import java.util.List;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.restful.product.entity.PageResponseDto;
 import com.restful.product.entity.Product;
 import com.restful.product.exception.InvalidProductException;
 import com.restful.product.exception.ProductNotFoundException;
@@ -71,15 +76,28 @@ public class ProductController {
 	}
     
     @GetMapping
-    public ResponseEntity<List<Product>> getAll() {
+    public ResponseEntity<PageResponseDto<Product>> getAll(
+    		@PageableDefault(size = 5, sort = "productName")
+    	    Pageable pageable) {
     	_LOGGER.info(">>> Inside getAll. <<<");
-    	List<Product> products = productService.findAllProducts();
     	
-    	if (products.isEmpty()) {
+    	Page<Product> page = productService.findAllProducts(pageable);
+    	
+    	PageResponseDto<Product> dto = new PageResponseDto<>();
+    	
+    	if(page != null) {
+	    	dto.setContent(page.getContent());
+	        dto.setTotalPages(page.getTotalPages());
+	        dto.setTotalElements(page.getTotalElements());
+	        dto.setPageNumber(page.getNumber());
+	        dto.setPageSize(page.getSize());
+    	}
+    	
+    	if (page != null && page.isEmpty()) {
             //throw new ProductNotFoundException("No products found");
         }
 
-        return ResponseEntity.ok(products);
+    	return ResponseEntity.ok(dto);
     	
     }
     
@@ -104,71 +122,138 @@ public class ProductController {
             throw new InvalidProductException("Product name must not be empty");
         }
 		
-		Product product = productService.findByProductName(productName)
-				 .orElseThrow(() -> new ProductNotFoundException("Product not found with productName: " + productName));
+		String decodedProductName = URLDecoder.decode(productName, StandardCharsets.UTF_8);
+		
+		Product product = productService.findByProductName(decodedProductName)
+				 .orElseThrow(() -> new ProductNotFoundException("Product not found with productName: " + decodedProductName));
 		return ResponseEntity.ok(product);
 	}
     
     @GetMapping("/search/productName/{name}")
-    public ResponseEntity<List<Product>> getByProductName(@PathVariable String name) {
+    public ResponseEntity<PageResponseDto<Product>> getByProductName(@PathVariable String name,
+    		@PageableDefault(size = 5, sort = "productName")
+			Pageable pageable) {
     	_LOGGER.info(">>> Inside getByName. <<<");
     	
     	if (name == null || name.isBlank()) {
             throw new InvalidProductException("Product name like must not be empty");
         }
     	
-		List<Product> products = productService.findByProductNameLike(name);
+    	String decodedName = URLDecoder.decode(name, StandardCharsets.UTF_8);
     	
-    	if (products.isEmpty()) {
+    	Page<Product> page = productService.findByProductNameLike(decodedName, pageable);
+    	
+    	PageResponseDto<Product> dto = new PageResponseDto<>();
+    	
+    	if(page != null) {
+	    	dto.setContent(page.getContent());
+	        dto.setTotalPages(page.getTotalPages());
+	        dto.setTotalElements(page.getTotalElements());
+	        dto.setPageNumber(page.getNumber());
+	        dto.setPageSize(page.getSize());
+    	}
+    	
+    	if (page != null && page.isEmpty()) {
             //throw new ProductNotFoundException("No products found for name: "+name);
         }
 
-        return ResponseEntity.ok(products);
+        //return ResponseEntity.ok(products);
+    	return new ResponseEntity<>(dto, HttpStatus.OK);
     }
     
     @GetMapping("/search/description/{description}")
-    public ResponseEntity<List<Product>> getByDescription(@PathVariable String description) {
-    	_LOGGER.info(">>> Inside getByDescription. <<<");
+    public ResponseEntity<PageResponseDto<Product>> getByDescription(@PathVariable String description,
+    		@PageableDefault(size = 5, sort = "productName")
+			Pageable pageable) {
+    	_LOGGER.info(">>> Inside getByDescription. description<<<"+description);
     	
     	if (description == null || description.isBlank()) {
             throw new InvalidProductException("Product description like must not be empty");
         }
     	
-		List<Product> products = productService.findByProductDescriptionLike(description);
+    	String decodedDescription = URLDecoder.decode(description, StandardCharsets.UTF_8);
     	
-    	if (products.isEmpty()) {
+    	Page<Product> page = productService.findByProductDescriptionLike(decodedDescription, pageable);
+    	
+    	PageResponseDto<Product> dto = new PageResponseDto<>();
+    	
+    	if(page != null) {
+	    	dto.setContent(page.getContent());
+	        dto.setTotalPages(page.getTotalPages());
+	        dto.setTotalElements(page.getTotalElements());
+	        dto.setPageNumber(page.getNumber());
+	        dto.setPageSize(page.getSize());
+    	}
+    	
+    	if (page != null && page.isEmpty()) {
             //throw new ProductNotFoundException("No products found for description: "+description);
         }
 
-        return ResponseEntity.ok(products);
+        //return ResponseEntity.ok(products);
+    	return new ResponseEntity<>(dto, HttpStatus.OK);
     }
     
     @GetMapping("/search/cas/{casNumber}")
-    public ResponseEntity<List<Product>> getByCasNumber(@PathVariable String casNumber) {
-    	_LOGGER.info(">>> Inside getByCasNumber. <<<");
+    public ResponseEntity<PageResponseDto<Product>> getByCasNumber(@PathVariable String casNumber,
+    		@PageableDefault(size = 5, sort = "productName")
+			Pageable pageable) {
+    	_LOGGER.info(">>> Inside getByCasNumber. casNumber <<<"+casNumber);
     	
     	if (casNumber == null || casNumber.isBlank()) {
             throw new InvalidProductException("Product cas number like must not be empty");
         }
     	
-		List<Product> products = productService.findByCasNumberLike(casNumber);
+    	String decodedCasNumber = URLDecoder.decode(casNumber, StandardCharsets.UTF_8);
     	
-    	if (products.isEmpty()) {
+    	_LOGGER.info(">>> Inside getByCasNumber. decodedCasNumber <<<"+decodedCasNumber);
+    	
+    	Page<Product> page = productService.findByCasNumberLike(decodedCasNumber, pageable);
+    	
+    	PageResponseDto<Product> dto = new PageResponseDto<>();
+    	
+    	if(page != null) {
+	    	dto.setContent(page.getContent());
+	        dto.setTotalPages(page.getTotalPages());
+	        dto.setTotalElements(page.getTotalElements());
+	        dto.setPageNumber(page.getNumber());
+	        dto.setPageSize(page.getSize());
+    	}
+    	
+    	if (page != null && page.isEmpty()) {
             //throw new ProductNotFoundException("No products found for cas number: "+casNumber);
         }
 
-        return ResponseEntity.ok(products);
+        //return ResponseEntity.ok(products);
+    	return new ResponseEntity<>(dto, HttpStatus.OK);
     }
     
     // GET products by multiple fields
     @GetMapping("/search")
-    public ResponseEntity<List<Product>> getByMultipleFields(
+    public ResponseEntity<PageResponseDto<Product>> getByMultipleFields(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String description,
-            @RequestParam(required = false) String casNumber) {
+            @RequestParam(required = false) String casNumber,
+            @PageableDefault(size = 5, sort = "productName")
+			Pageable pageable) {
         try {
-            List<Product> products = productService.findByProductNameDesCanNumber(name, description, casNumber);
-            return ResponseEntity.ok(products);
+        	
+        	String decodedName = URLDecoder.decode(name, StandardCharsets.UTF_8);
+        	String decodedDescription = URLDecoder.decode(description, StandardCharsets.UTF_8);
+        	String decodedCasNumber = URLDecoder.decode(casNumber, StandardCharsets.UTF_8);
+        	
+        	Page<Product> page = productService.findByProductNameDesCanNumber(decodedName, decodedDescription, decodedCasNumber, pageable);
+        	
+        	PageResponseDto<Product> dto = new PageResponseDto<>();
+        	
+        	if(page != null) {
+    	    	dto.setContent(page.getContent());
+    	        dto.setTotalPages(page.getTotalPages());
+    	        dto.setTotalElements(page.getTotalElements());
+    	        dto.setPageNumber(page.getNumber());
+    	        dto.setPageSize(page.getSize());
+        	}
+            //return ResponseEntity.ok(products);
+        	return new ResponseEntity<>(dto, HttpStatus.OK);
         } catch (ServiceException ex) {
             _LOGGER.error("Error fetching products by multiple fields: {}", ex.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

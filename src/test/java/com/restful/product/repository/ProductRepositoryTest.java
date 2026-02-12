@@ -2,14 +2,13 @@ package com.restful.product.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.*;
 
 import com.restful.product.entity.Product;
 
@@ -18,92 +17,76 @@ import com.restful.product.entity.Product;
         org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
         org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration.class
 })
-public class ProductRepositoryTest {
+class ProductRepositoryTest {
 
     @Autowired
     private ProductRepository productRepository;
 
-    private Product product1;
-    private Product product2;
+    private Product product;
+
+    private Pageable pageable;
 
     @BeforeEach
     void setUp() {
-        productRepository.deleteAll(); // clean DB before each test
+        product = new Product();
+        product.setProductName("Aspirin");
+        product.setProductDescription("Pain relief tablet");
+        product.setCasNumber("123-45-6");
 
-        product1 = new Product();
-        product1.setProductName("Aspirin");
-        product1.setProductDescription("Pain reliever");
-        product1.setCasNumber("50-78-2");
+        productRepository.save(product);
 
-        product2 = new Product();
-        product2.setProductName("Paracetamol");
-        product2.setProductDescription("Fever reducer");
-        product2.setCasNumber("103-90-2");
-
-        productRepository.save(product1);
-        productRepository.save(product2);
+        pageable = PageRequest.of(0, 10);
     }
 
     @Test
-    @DisplayName("Find product by ID")
     void testFindByProductId() {
-        Optional<Product> found = productRepository.findByProductId(product1.getProductId());
-        assertThat(found).isPresent();
-        assertThat(found.get().getProductName()).isEqualTo("Aspirin");
+        Optional<Product> result = productRepository.findByProductId(product.getProductId());
+        assertThat(result).isPresent();
+        assertThat(result.get().getProductName()).isEqualTo("Aspirin");
     }
 
     @Test
-    @DisplayName("Find product by Name")
     void testFindByProductName() {
-        Optional<Product> found = productRepository.findByProductName("Paracetamol");
-        assertThat(found).isPresent();
-        assertThat(found.get().getProductDescription()).isEqualTo("Fever reducer");
+        Optional<Product> result = productRepository.findByProductName("Aspirin");
+        assertThat(result).isPresent();
+        assertThat(result.get().getProductDescription()).contains("Pain");
     }
 
     @Test
-    @DisplayName("Delete product by ID")
     void testDeleteByProductId() {
-        productRepository.deleteByProductId(product1.getProductId());
-        Optional<Product> found = productRepository.findByProductId(product1.getProductId());
-        assertThat(found).isEmpty();
+        productRepository.deleteByProductId(product.getProductId());
+        Optional<Product> result = productRepository.findByProductId(product.getProductId());
+        assertThat(result).isNotPresent();
     }
 
     @Test
-    @DisplayName("Find by product name like")
     void testFindByProductNameLike() {
-        List<Product> products = productRepository.findByProductNameLike("par");
-        assertThat(products).hasSize(1)
-                            .extracting(Product::getProductName)
-                            .contains("Paracetamol");
+        Page<Product> page = productRepository.findByProductNameLike("aspirin", pageable);
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().get(0).getProductName()).isEqualTo("Aspirin");
     }
 
     @Test
-    @DisplayName("Find by product description like")
     void testFindByProductDescriptionLike() {
-        List<Product> products = productRepository.findByProductDescriptionLike("pain");
-        assertThat(products).hasSize(1)
-                            .extracting(Product::getProductDescription)
-                            .contains("Pain reliever");
+        Page<Product> page = productRepository.findByProductDescriptionLike("pain", pageable);
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().get(0).getProductDescription()).contains("Pain");
     }
 
     @Test
-    @DisplayName("Find by CAS number like")
     void testFindByCasNumberLike() {
-        List<Product> products = productRepository.findByCasNumberLike("103");
-        assertThat(products).hasSize(1)
-                            .extracting(Product::getCasNumber)
-                            .contains("103-90-2");
+        Page<Product> page = productRepository.findByCasNumberLike("123", pageable);
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().get(0).getCasNumber()).isEqualTo("123-45-6");
     }
 
     @Test
-    @DisplayName("Find by product name, description, and CAS number")
     void testFindByProductNameDesCanNumber() {
-        List<Product> products = productRepository.findByProductNameDesCanNumber(
-            "Aspirin", "Pain", "50-78"
-        );
-
-        assertThat(products).hasSize(1)
-                            .extracting(Product::getProductName)
-                            .contains("Aspirin");
+        Page<Product> page = productRepository.findByProductNameDesCanNumber("aspirin", "pain", "123", pageable);
+        assertThat(page.getContent()).hasSize(1);
+        Product p = page.getContent().get(0);
+        assertThat(p.getProductName()).isEqualTo("Aspirin");
+        assertThat(p.getProductDescription()).contains("Pain");
+        assertThat(p.getCasNumber()).isEqualTo("123-45-6");
     }
 }

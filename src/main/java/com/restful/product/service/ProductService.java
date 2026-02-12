@@ -1,11 +1,12 @@
 package com.restful.product.service;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,9 +41,9 @@ public class ProductService {
 		}
 	}
 
-	public List<Product> findAllProducts() throws ServiceException {
+	public Page<Product> findAllProducts(Pageable pageable) throws ServiceException {
 		try {
-			return productRepository.findAll();
+			return productRepository.findAll(pageable);
 		} catch (Exception exp) {
 			_LOGGER.error("ERROR: Service Exception occured in findAllProducts."+exp.toString());	
 			throw new ServiceException("ERROR: Service Exception occured in findAllProducts."+exp.toString());
@@ -58,38 +59,39 @@ public class ProductService {
 		}
     }
 	
-    public List<Product> findByProductNameLike(String productName) throws ServiceException {
+    public Page<Product> findByProductNameLike(String productName, Pageable pageable) throws ServiceException {
     	try {
-    		return productRepository.findByProductNameLike(productName);
+    		return productRepository.findByProductNameLike(productName, pageable);
 	    } catch (Exception exp) {
 			_LOGGER.error("ERROR: Service Exception occured in findByProductNameLike."+exp.toString());	
 			throw new ServiceException("ERROR: Service Exception occured in findByProductNameLike."+exp.toString());
 		}
     }
     
-    public List<Product> findByProductDescriptionLike(String productDescription) throws ServiceException {
+    public Page<Product> findByProductDescriptionLike(String productDescription, Pageable pageable) throws ServiceException {
     	try {
-	    	return productRepository.findByProductDescriptionLike(productDescription);
+	    	return productRepository.findByProductDescriptionLike(productDescription, pageable);
 	    } catch (Exception exp) {
 			_LOGGER.error("ERROR: Service Exception occured in findByProductDescriptionLike."+exp.toString());	
 			throw new ServiceException("ERROR: Service Exception occured in findByProductDescriptionLike."+exp.toString());
 		}
     }
     
-    public List<Product> findByCasNumberLike(String casNumber) throws ServiceException {
+    public Page<Product> findByCasNumberLike(String casNumber, Pageable pageable) throws ServiceException {
     	try {
-	    	return productRepository.findByCasNumberLike(casNumber);
+	    	return productRepository.findByCasNumberLike(casNumber, pageable);
 	    } catch (Exception exp) {
 			_LOGGER.error("ERROR: Service Exception occured in findByCasNumberLike."+exp.toString());	
 			throw new ServiceException("ERROR: Service Exception occured in findByCasNumberLike."+exp.toString());
 		}
     }
     
-    public List<Product> findByProductNameDesCanNumber(String productName, 
+    public Page<Product> findByProductNameDesCanNumber(String productName, 
     													String productDescription, 
-    													String casNumber) throws ServiceException {
+    													String casNumber,
+    													Pageable pageable) throws ServiceException {
     	try {
-	    	return productRepository.findByProductNameDesCanNumber(productName, productDescription, casNumber);
+	    	return productRepository.findByProductNameDesCanNumber(productName, productDescription, casNumber, pageable);
 	    } catch (Exception exp) {
 			_LOGGER.error("ERROR: Service Exception occured in findByProductNameDesCanNumber."+exp.toString());	
 			throw new ServiceException("ERROR: Service Exception occured in findByProductNameDesCanNumber."+exp.toString());

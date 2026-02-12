@@ -1,8 +1,9 @@
 package com.restful.product.repository;
 
-import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,19 +24,19 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     	    SELECT p FROM Product p
     	    WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :productName, '%'))
     	""")
-    	List<Product> findByProductNameLike(@Param("productName") String productName);
+    	Page<Product> findByProductNameLike(@Param("productName") String productName, Pageable pageable);
     
     @Query("""
     	    SELECT p FROM Product p
     	    WHERE LOWER(p.productDescription) LIKE LOWER(CONCAT('%', :productDescription, '%'))
     	""")
-    	List<Product> findByProductDescriptionLike(@Param("productDescription") String productDescription);
+    	Page<Product> findByProductDescriptionLike(@Param("productDescription") String productDescription, Pageable pageable);
     
     @Query("""
     	    SELECT p FROM Product p
     	    WHERE LOWER(p.casNumber) LIKE LOWER(CONCAT('%', :casNumber, '%'))
     	""")
-    	List<Product> findByCasNumberLike(@Param("casNumber") String casNumber);
+    	Page<Product> findByCasNumberLike(@Param("casNumber") String casNumber, Pageable pageable);
 	
     
     @Query("""
@@ -44,8 +45,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     	    AND LOWER(p.productDescription) LIKE LOWER(CONCAT('%', :productDescription, '%'))
     	    AND LOWER(p.casNumber) LIKE LOWER(CONCAT('%', :casNumber, '%'))
     	""")
-    	List<Product> findByProductNameDesCanNumber(@Param("productName") String productName,
+    	Page<Product> findByProductNameDesCanNumber(@Param("productName") String productName,
     	                       @Param("productDescription") String productDescription,
-    	                       @Param("casNumber") String casNumber);
+    	                       @Param("casNumber") String casNumber,
+    	                       Pageable pageable);
     
 }
