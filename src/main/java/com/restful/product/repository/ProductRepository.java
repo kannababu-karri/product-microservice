@@ -45,7 +45,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     	    AND LOWER(p.productDescription) LIKE LOWER(CONCAT('%', :productDescription, '%'))
     	    AND LOWER(p.casNumber) LIKE LOWER(CONCAT('%', :casNumber, '%'))
     	""")
-    	Page<Product> findByProductNameDesCanNumber(@Param("productName") String productName,
+    	Page<Product> findByProductNameDesCasNumber(@Param("productName") String productName,
     	                       @Param("productDescription") String productDescription,
     	                       @Param("casNumber") String casNumber,
     	                       Pageable pageable);

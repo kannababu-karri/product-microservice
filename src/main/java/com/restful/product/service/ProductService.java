@@ -5,12 +5,14 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.restful.product.entity.Product;
+import com.restful.product.exception.InvalidProductException;
 import com.restful.product.exception.ServiceException;
 import com.restful.product.repository.ProductRepository;
 
@@ -22,14 +24,49 @@ public class ProductService {
 	private ProductRepository productRepository;
 
 	@Transactional
-	public Product saveOrUpdate(Product product) throws ServiceException {
-		try {
-			return productRepository.save(product);
-		} catch (Exception exp) {
-			_LOGGER.error("ERROR: Service Exception occured in saveOrUpdate."+exp.toString());	
-			throw new ServiceException("ERROR: Service Exception occured in saveOrUpdate."+exp.toString());
-		}
+	public Product saveOrUpdate(Product product) {
+
+	    if (productRepository.findByProductName(product.getProductName()).isPresent()) {
+	        throw new InvalidProductException("Product name already exists!!!");
+	    }
+
+	    try {
+	        return productRepository.save(product);
+	    } catch (DataIntegrityViolationException e) {
+	        throw new InvalidProductException("Product name already exists!!!");
+	    } catch (Exception e) {
+	        _LOGGER.error("saveOrUpdate failed", e);
+	        throw new ServiceException("Server error while saving product");
+	    }
 	}
+	
+	@Transactional
+    public Product update(Product product) throws ServiceException {
+    	try {
+    		Product existing =
+    				productRepository.findById(product.getProductId())
+    		        .orElseThrow(() -> new RuntimeException("Product not found"));
+    		
+    		//Check existing and db product name.
+    		if(product.getProductName().equalsIgnoreCase(existing.getProductName())) {
+    			//Check product name already exists.
+    			if (productRepository.findByProductName(product.getProductName()).isPresent()) {
+    		        throw new InvalidProductException("Product name already exists!!!");
+    		    }
+    		}
+
+		    existing.setProductName(product.getProductName());
+		    existing.setProductDescription(product.getProductDescription());
+		    existing.setCasNumber(product.getCasNumber());
+
+		    return productRepository.save(product);
+	    } catch (DataIntegrityViolationException e) {
+	        throw new InvalidProductException("Product name already exists!!!");
+	    } catch (Exception e) {
+	        _LOGGER.error("saveOrUpdate failed", e);
+	        throw new ServiceException("Server error while saving product");
+	    }
+    }
 	
 	@Transactional
 	public void deleteByProductId(Long productId) throws ServiceException {
@@ -86,12 +123,12 @@ public class ProductService {
 		}
     }
     
-    public Page<Product> findByProductNameDesCanNumber(String productName, 
+    public Page<Product> findByProductNameDesCasNumber(String productName, 
     													String productDescription, 
     													String casNumber,
     													Pageable pageable) throws ServiceException {
     	try {
-	    	return productRepository.findByProductNameDesCanNumber(productName, productDescription, casNumber, pageable);
+	    	return productRepository.findByProductNameDesCasNumber(productName, productDescription, casNumber, pageable);
 	    } catch (Exception exp) {
 			_LOGGER.error("ERROR: Service Exception occured in findByProductNameDesCanNumber."+exp.toString());	
 			throw new ServiceException("ERROR: Service Exception occured in findByProductNameDesCanNumber."+exp.toString());

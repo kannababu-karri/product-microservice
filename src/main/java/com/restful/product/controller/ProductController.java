@@ -2,6 +2,8 @@ package com.restful.product.controller;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,10 +13,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,9 +30,13 @@ import com.restful.product.exception.InvalidProductException;
 import com.restful.product.exception.ProductNotFoundException;
 import com.restful.product.exception.ServiceException;
 import com.restful.product.service.ProductService;
+import com.restful.product.utils.ILConstants;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/product")
+@CrossOrigin(origins = {ILConstants.ANGULAR_URL_DEV, ILConstants.ANGULAR_URL_PROD})
 public class ProductController {
 
 	private static final Logger _LOGGER = LoggerFactory.getLogger(ProductController.class);
@@ -41,38 +49,56 @@ public class ProductController {
     }
     
     @PostMapping
-    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-    	_LOGGER.info(">>> Inside createProduct. <<<");
-        if (product.getProductName() == null || product.getProductName().isBlank()) {
-            throw new InvalidProductException("Product name must not be empty");
-        }
+    public ResponseEntity<Product> create(@Valid @RequestBody Product product) {
+
+        _LOGGER.info(">>> Inside createProduct. <<<");
 
         Product saved = productService.saveOrUpdate(product);
-        
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> update(@PathVariable Long id,
+                                               @RequestBody Product product) {
+    	product.setProductId(id);
+    	Product updated = productService.update(product);
+        return ResponseEntity.ok(updated);
     }
     
     @DeleteMapping("/{id}")
-	public ResponseEntity<String> delete(@PathVariable Long id) {
+	public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {
 		_LOGGER.info(">>> Inside deleteProduct. <<<");		
 		
 		if (id == null || id <= 0) {
 			throw new InvalidProductException("Product id must not be empty");
 		}
 		
+		Map<String, String> response = new HashMap<>();
+		
 		try {
 			productService.deleteByProductId(id);
-			return ResponseEntity.ok("Product deleted successfully.");		
+			//return ResponseEntity.ok("Product deleted successfully.");
+			
+			response.put("message", "Product deleted successfully.");
+			
+		    return ResponseEntity.ok(response);
+		    
 	    } catch (InvalidProductException ex) {
-	        // ID not found in DB
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-	                .body("Product not found with id: " + id);
+	    	_LOGGER.error("Error deleting product InvalidProductException with id {}: {}", id, ex.getMessage());
+	        response.put("status", HttpStatus.NOT_FOUND.toString());
+	        response.put("message", "Product not found with id: " + id);
+	        return ResponseEntity
+	                .status(HttpStatus.NOT_FOUND)
+	                .body(response);
 	    } catch (Exception ex) {
-	        _LOGGER.error("Error deleting product with id {}: {}", id, ex.getMessage());
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body("Unexpected error occurred: " + ex.getMessage());
+	        _LOGGER.error("Error deleting product Exception with id {}: {}", id, ex.getMessage());
+	        response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.toString());
+	        response.put("message", "Unexpected error occurred: " + ex.getMessage());
+	        return ResponseEntity
+	                .status(HttpStatus.NOT_FOUND)
+	                .body(response);
 	    }
-		
 	}
     
     @GetMapping
@@ -129,7 +155,8 @@ public class ProductController {
 		return ResponseEntity.ok(product);
 	}
     
-    @GetMapping("/search/productName/{name}")
+    //@GetMapping("/search/productName/{name}")
+    @GetMapping({"/search/productName", "/search/productName/{name}"})
     public ResponseEntity<PageResponseDto<Product>> getByProductName(@PathVariable String name,
     		@PageableDefault(size = 5, sort = "productName")
 			Pageable pageable) {
@@ -161,7 +188,8 @@ public class ProductController {
     	return new ResponseEntity<>(dto, HttpStatus.OK);
     }
     
-    @GetMapping("/search/description/{description}")
+    //@GetMapping("/search/description/{description}")
+    @GetMapping({"/search/description", "/search/description/{description}"})
     public ResponseEntity<PageResponseDto<Product>> getByDescription(@PathVariable String description,
     		@PageableDefault(size = 5, sort = "productName")
 			Pageable pageable) {
@@ -193,7 +221,8 @@ public class ProductController {
     	return new ResponseEntity<>(dto, HttpStatus.OK);
     }
     
-    @GetMapping("/search/cas/{casNumber}")
+    //@GetMapping("/search/cas/{casNumber}")
+    @GetMapping({"/search/cas", "/search/cas/{casNumber}"})
     public ResponseEntity<PageResponseDto<Product>> getByCasNumber(@PathVariable String casNumber,
     		@PageableDefault(size = 5, sort = "productName")
 			Pageable pageable) {
@@ -235,13 +264,22 @@ public class ProductController {
             @RequestParam(required = false) String casNumber,
             @PageableDefault(size = 5, sort = "productName")
 			Pageable pageable) {
+    	
+    	_LOGGER.info(">>> Inside getByMultipleFields. name <<<"+name);
+    	_LOGGER.info(">>> Inside getByMultipleFields. description <<<"+description);
+    	_LOGGER.info(">>> Inside getByMultipleFields. casNumber <<<"+casNumber);
+    	
         try {
         	
         	String decodedName = URLDecoder.decode(name, StandardCharsets.UTF_8);
         	String decodedDescription = URLDecoder.decode(description, StandardCharsets.UTF_8);
         	String decodedCasNumber = URLDecoder.decode(casNumber, StandardCharsets.UTF_8);
         	
-        	Page<Product> page = productService.findByProductNameDesCanNumber(decodedName, decodedDescription, decodedCasNumber, pageable);
+        	_LOGGER.info(">>> Inside getByMultipleFields. decodedName <<<"+decodedName);
+        	_LOGGER.info(">>> Inside getByMultipleFields. decodedDescription <<<"+decodedDescription);
+        	_LOGGER.info(">>> Inside getByMultipleFields. decodedCasNumber <<<"+decodedCasNumber);
+        	
+        	Page<Product> page = productService.findByProductNameDesCasNumber(decodedName, decodedDescription, decodedCasNumber, pageable);
         	
         	PageResponseDto<Product> dto = new PageResponseDto<>();
         	
