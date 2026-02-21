@@ -48,7 +48,7 @@ public class ProductService {
     		        .orElseThrow(() -> new RuntimeException("Product not found"));
     		
     		//Check existing and db product name.
-    		if(product.getProductName().equalsIgnoreCase(existing.getProductName())) {
+    		if(!product.getProductName().equalsIgnoreCase(existing.getProductName())) {
     			//Check product name already exists.
     			if (productRepository.findByProductName(product.getProductName()).isPresent()) {
     		        throw new InvalidProductException("Product name already exists!!!");

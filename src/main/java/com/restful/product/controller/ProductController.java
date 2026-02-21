@@ -48,7 +48,7 @@ public class ProductController {
     	_LOGGER.info(">>> ProductController LOADED. <<<");
     }
     
-    @PostMapping
+    @PostMapping({ "", "/" })
     public ResponseEntity<Product> create(@Valid @RequestBody Product product) {
 
         _LOGGER.info(">>> Inside createProduct. <<<");
@@ -101,7 +101,7 @@ public class ProductController {
 	    }
 	}
     
-    @GetMapping
+    @GetMapping({"", "/"})
     public ResponseEntity<PageResponseDto<Product>> getAll(
     		@PageableDefault(size = 5, sort = "productName")
     	    Pageable pageable) {
